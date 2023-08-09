@@ -8,9 +8,26 @@ const ramenRatingDisplay = document.getElementById('rating-display')
 const ramenCommentDisplay = document.getElementById('comment-display')
 
 function addRamenImageToMenu(ramen){
+    const divElement = document.createElement('div')
     const imgTag = document.createElement('img')
     imgTag.src = ramen.image
-    ramenMenu.appendChild(imgTag)
+
+    // Advanced Deliverable # 3
+    const deleteButton = document.createElement('button')
+    deleteButton.textContent = "Delete"
+    deleteButton.addEventListener('click', (event) => {
+        event.target.parentNode.remove()
+        const placeholderDetails = {
+            name: "Insert Name Here",
+            restaurant: "Insert Restaurant Here",
+            image: "./assets/image-placeholder.jpg",
+            rating: "Insert rating here",
+            comment: "Insert comment here"
+        }
+        displayRamenDetails(placeholderDetails)
+    })
+    divElement.append(imgTag, deleteButton)
+    ramenMenu.appendChild(divElement)
 
     // Deliverable # 2
     imgTag.addEventListener('click', () => {
@@ -34,6 +51,9 @@ fetch('http://localhost:3000/ramens')
     ramens.forEach(ramen => {
         addRamenImageToMenu(ramen)
     })
+
+    // Advanced Deliverable # 1
+    displayRamenDetails(ramens[0])
 })
 
 // Deliverable # 3
@@ -56,4 +76,19 @@ newRamenForm.addEventListener('submit', (event) => {
 
     addRamenImageToMenu(newRamen)
     newRamenForm.reset()
+})
+
+// Advanced Deliverable # 2
+/* In index.html, inside the <form id="edit-ramen"> make the following changes:
+ * Change the first <input/>'s id="edit-rating" instead of id="new-rating"
+ * Change the <textarea/>'s id="edit-comment" instead of id="new-comment"
+ */ 
+const editRamen = document.getElementById('edit-ramen')
+editRamen.addEventListener('submit', (event) => {
+    event.preventDefault()
+    const newRating = document.getElementById('edit-rating')
+    const newComment = document.getElementById('edit-comment')
+
+    ramenRatingDisplay.textContent = newRating.value
+    ramenCommentDisplay.textContent = newComment.value
 })
