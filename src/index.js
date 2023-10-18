@@ -7,6 +7,24 @@ const ramenRestaurant = document.querySelector('.restaurant')
 const ramenRatingDisplay = document.getElementById('rating-display')
 const ramenCommentDisplay = document.getElementById('comment-display')
 
+let allRamens
+let currentlyDisplayedRamen
+
+fetch('http://localhost:3000/ramens')
+.then(response => response.json())
+.then(ramens => {
+
+    allRamens = ramens
+
+    // Deliverable # 1
+    ramens.forEach(ramen => {
+        addRamenImageToMenu(ramen)
+    })
+
+    // Advanced Deliverable # 1
+    displayRamenDetails(ramens[0])
+})
+
 function addRamenImageToMenu(ramen){
     const divElement = document.createElement('div')
     const imgTag = document.createElement('img')
@@ -15,16 +33,31 @@ function addRamenImageToMenu(ramen){
     // Advanced Deliverable # 3
     const deleteButton = document.createElement('button')
     deleteButton.textContent = "Delete"
-    deleteButton.addEventListener('click', (event) => {
-        event.target.parentNode.remove()
-        const placeholderDetails = {
-            name: "Insert Name Here",
-            restaurant: "Insert Restaurant Here",
-            image: "./assets/image-placeholder.jpg",
-            rating: "Insert rating here",
-            comment: "Insert comment here"
+    deleteButton.addEventListener('click', () => {
+
+        if(ramen.id === currentlyDisplayedRamen.id){
+            const placeholderDetails = {
+                name: "Insert Name Here",
+                restaurant: "Insert Restaurant Here",
+                image: "./assets/image-placeholder.jpg",
+                rating: "Insert rating here",
+                comment: "Insert comment here"
+            }
+            displayRamenDetails(placeholderDetails)
         }
-        displayRamenDetails(placeholderDetails)
+
+        // Extra Advanced Deliverable # 3 - DELETE Request
+        fetch(`http://localhost:3000/ramens/${ramen.id}`, {
+            method: "DELETE"
+        })
+        .then(response => {
+            if(response.ok){
+                allRamens = allRamens.filter(r => {
+                    return r.id !== ramen.id
+                })
+                updateRamenMenu()
+            }
+        })
     })
     divElement.append(imgTag, deleteButton)
     ramenMenu.appendChild(divElement)
@@ -36,6 +69,8 @@ function addRamenImageToMenu(ramen){
 }
 
 function displayRamenDetails(ramen){
+    currentlyDisplayedRamen = ramen
+
     ramenName.textContent = ramen.name
     ramenRestaurant.textContent = ramen.restaurant
     ramenDetailImage.src = ramen.image
@@ -43,18 +78,12 @@ function displayRamenDetails(ramen){
     ramenCommentDisplay.textContent = ramen.comment
 }
 
-fetch('http://localhost:3000/ramens')
-.then(response => response.json())
-.then(ramens => {
-
-    // Deliverable # 1
-    ramens.forEach(ramen => {
+function updateRamenMenu(){
+    ramenMenu.innerHTML = ""
+    allRamens.forEach(ramen => {
         addRamenImageToMenu(ramen)
     })
-
-    // Advanced Deliverable # 1
-    displayRamenDetails(ramens[0])
-})
+}
 
 // Deliverable # 3
 const newRamenForm = document.getElementById('new-ramen')
@@ -74,21 +103,62 @@ newRamenForm.addEventListener('submit', (event) => {
         comment: newComment.value
     }
 
-    addRamenImageToMenu(newRamen)
-    newRamenForm.reset()
+    // Extra Advanced Deliverable # 2 - POST Request
+    fetch('http://localhost:3000/ramens', {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        },
+        body: JSON.stringify(newRamen)
+    })
+    .then(response => response.json())
+    .then(newRamenData => {
+        allRamens = [...allRamens, newRamenData]
+        updateRamenMenu()
+
+        newRamenForm.reset()
+    })
 })
 
 // Advanced Deliverable # 2
-/* In index.html, inside the <form id="edit-ramen"> make the following changes:
- * Change the first <input/>'s id="edit-rating" instead of id="new-rating"
- * Change the <textarea/>'s id="edit-comment" instead of id="new-comment"
+/* In index.html, inside the <form id="edit-ramen"> the following changes were made:
+ * Changed the first <input/>'s id="edit-rating" instead of id="new-rating"
+ * Changed the <textarea/>'s id="edit-comment" instead of id="new-comment"
  */ 
-const editRamen = document.getElementById('edit-ramen')
-editRamen.addEventListener('submit', (event) => {
+const editRamenForm = document.getElementById('edit-ramen')
+editRamenForm.addEventListener('submit', (event) => {
     event.preventDefault()
     const newRating = document.getElementById('edit-rating')
     const newComment = document.getElementById('edit-comment')
 
     ramenRatingDisplay.textContent = newRating.value
     ramenCommentDisplay.textContent = newComment.value
+
+    // Extra Advanced Deliverable # 1 - PATCH Request
+    fetch(`http://localhost:3000/ramens/${currentlyDisplayedRamen.id}`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        },
+        body: JSON.stringify({
+            rating: Number(newRating.value),
+            comment: newComment.value
+        })
+    })
+    .then(response => response.json())
+    .then(updatedRamen => {
+        allRamens = allRamens.map(ramen => {
+            if(ramen.id === updatedRamen.id){
+                return updatedRamen
+            }
+            else{
+                return ramen
+            }
+        })
+        updateRamenMenu()
+
+        editRamenForm.reset()
+    })
 })
